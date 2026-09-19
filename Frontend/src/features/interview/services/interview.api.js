@@ -3,57 +3,59 @@ import axios from "axios";
 const api = axios.create({
     baseURL: "http://localhost:3000",
     withCredentials: true,
-})
-
+});
 
 /**
- * @description Service to generate interview report based on user self description, resume and job description.
+ * @description Pipes requirements to WebDev-GenAI execution block & compiles code sandbox.
  */
 export const generateInterviewReport = async ({ jobDescription, selfDescription, resumeFile }) => {
-
-    const formData = new FormData()
-    formData.append("jobDescription", jobDescription)
-    formData.append("selfDescription", selfDescription)
-    formData.append("resume", resumeFile)
+    const formData = new FormData();
+    formData.append("jobDescription", jobDescription); 
+    formData.append("selfDescription", selfDescription); 
+    if (resumeFile) {
+        formData.append("resume", resumeFile); 
+    }
 
     const response = await api.post("/api/interview/", formData, {
         headers: {
             "Content-Type": "multipart/form-data"
         }
-    })
-
-    return response.data
-
-}
-
+    });
+    return response.data;
+};
 
 /**
- * @description Service to get interview report by interviewId.
+ * @description Fetches architecture specifications and module codeblocks by workflow ID.
  */
 export const getInterviewReportById = async (interviewId) => {
-    const response = await api.get(`/api/interview/report/${interviewId}`)
-
-    return response.data
-}
-
+    const response = await api.get(`/api/interview/report/${interviewId}`);
+    return response.data;
+};
 
 /**
- * @description Service to get all interview reports of logged in user.
+ * @description Pulls recent compilation snapshots for user dashboard view.
  */
 export const getAllInterviewReports = async () => {
-    const response = await api.get("/api/interview/")
-
-    return response.data
-}
-
+    const response = await api.get("/api/interview/");
+    return response.data;
+};
 
 /**
- * @description Service to generate resume pdf based on user self description, resume content and job description.
+ * @description Triggers backend bundler, downloads compiled architecture source-code as a .zip file.
  */
-export const generateResumePdf = async ({ interviewReportId }) => {
+export const generateResumePdf = async (interviewReportId) => {
     const response = await api.post(`/api/interview/resume/pdf/${interviewReportId}`, null, {
-        responseType: "blob"
-    })
+        responseType: "blob" 
+    });
 
-    return response.data
-}
+    // Auto-trigger clean browser down-pipe for the compiled zip build
+    const blob = new Blob([response.data], { type: 'application/zip' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.download = `webdev-genai-build-${interviewReportId}.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    return response.data;
+};
