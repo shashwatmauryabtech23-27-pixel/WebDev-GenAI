@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useState, useEffect } from "react";
 import { login, register, logout, getMe } from "./services/auth.api.js";
 
@@ -15,7 +16,7 @@ export const AuthProvider = ({ children }) => {
                 if (data && data.user) {
                     setUser(data.user);
                 }
-            } catch (error) {
+            } catch {
                 console.log("No active structural token session initialized.");
                 setUser(null);
             } finally {
@@ -38,7 +39,6 @@ export const AuthProvider = ({ children }) => {
             return data;
         } catch (error) {
             console.error("Context Login Architecture Error:", error);
-            alert(error.response?.data?.message || "Invalid authentication parameters.");
             throw error;
         } finally {
             setLoading(false);
@@ -58,7 +58,6 @@ export const AuthProvider = ({ children }) => {
             return data;
         } catch (error) {
             console.error("Context Registration Architecture Error:", error);
-            alert(error.response?.data?.message || "Registration parameter constraints unmet.");
             throw error;
         } finally {
             setLoading(false);

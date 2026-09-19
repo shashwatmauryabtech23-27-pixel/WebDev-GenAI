@@ -1,5 +1,9 @@
 @use "./style/button.scss";
 
+.route-loader { min-height: 70vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; }
+.route-loader__spinner { width: 34px; height: 34px; border: 3px solid var(--border-color); border-top-color: var(--accent); border-radius: 50%; animation: route-spin .8s linear infinite; }
+@keyframes route-spin { to { transform: rotate(360deg); } }
+
 * {
     margin: 0%;
     padding: 0%;

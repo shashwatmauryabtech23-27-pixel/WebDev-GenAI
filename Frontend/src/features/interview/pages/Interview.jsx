@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../style/interview.scss';
 import { useInterview } from '../hooks/useInterview.js';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import Navbar from './Navbar.jsx';
 
 const NAV_ITEMS = [
@@ -75,6 +75,8 @@ const Interview = () => {
         if (interviewId) {
             getReportById(interviewId);
         }
+    // getReportById is supplied by the context and keyed by the route id.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [interviewId]);
 
     if (loading || !report) {

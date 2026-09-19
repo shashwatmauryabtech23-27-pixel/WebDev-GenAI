@@ -87,6 +87,8 @@ $font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, s
         gap: 1.25rem;
     }
 
+    &__user { color: var(--text-muted); font-size: 0.85rem; white-space: nowrap; }
+
     &__theme-toggle {
         display: flex;
         align-items: center;
@@ -118,6 +120,8 @@ $font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, s
         text-decoration: none;
         transition: opacity 0.2s;
         font-family: $font-stack;
+        border: 0;
+        cursor: pointer;
 
         &:hover {
             opacity: 0.9;

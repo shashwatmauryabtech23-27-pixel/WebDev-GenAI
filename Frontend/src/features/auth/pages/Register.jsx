@@ -8,13 +8,19 @@ const Register = () => {
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
 
     const { loading, handleRegister } = useAuth();
     
     const handleSubmit = async (e) => {
         e.preventDefault();
-        await handleRegister({ username, email, password });
-        navigate("/");
+        setError("");
+        try {
+            await handleRegister({ username, email, password });
+            navigate("/");
+        } catch (err) {
+            setError(err.response?.data?.message || "Unable to create your account. Please try again.");
+        }
     };
 
     if (loading) {
@@ -26,10 +32,15 @@ const Register = () => {
     }
 
     return (
-        <main>
+        <main className="auth-page">
+            <section className="auth-visual">
+                <Link to="/" className="auth-brand">WebDev<span>GenAI</span></Link>
+                <div><span className="auth-kicker">Build smarter</span><h1>Your next full-stack project starts with one prompt.</h1><p>Create a secure account and keep every generated architecture and implementation plan together.</p></div>
+                <div className="auth-proof"><strong>One workspace, less clutter.</strong><span>From prompt to deployment blueprint.</span></div>
+            </section>
             <div className="form-container">
-                <h1>Register</h1>
-
+                <div className="form-heading"><span>Start for free</span><h2>Create your account</h2><p>No complicated setup. Start generating in seconds.</p></div>
+                {error && <div className="form-error" role="alert">{error}</div>}
                 <form onSubmit={handleSubmit}>
                     <div className="input-group">
                         <label htmlFor="username">Username</label>
@@ -50,10 +61,10 @@ const Register = () => {
                             type="password" id="password" name='password' placeholder='Enter password' required />
                     </div>
 
-                    <button type="submit" className='button primary-button'>Register</button>
+                    <button type="submit" className='auth-submit'>Create account</button>
                 </form>
 
-                <p>Already have an account? <Link to={"/login"}>Login</Link> </p>
+                <p className="auth-switch">Already have an account? <Link to={"/login"}>Sign in</Link></p>
             </div>
         </main>
     );

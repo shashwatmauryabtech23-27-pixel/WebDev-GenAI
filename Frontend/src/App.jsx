@@ -1,14 +1,33 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Navigate, Routes, Route, useLocation } from "react-router-dom";
 import Home from "./features/interview/pages/Home";
-import Pricing from "./features/interview/pages/Pricing";
-import Tools from "./features/interview/pages/Tools";
 import Navbar from "./features/interview/pages/Navbar";
 import Footer from "./features/interview/pages/Footer";
 import Login from "./features/auth/pages/Login";
 import Register from "./features/auth/pages/Register";
+import Interview from "./features/interview/pages/Interview";
+import Protected from "./features/auth/components/Protected";
 import { InterviewProvider } from "./features/interview/interview.context";
 import { AuthProvider } from "./features/auth/auth.context";
 import { ThemeProvider } from "./context/theme.context";
+
+function AppRoutes() {
+  const location = useLocation();
+  const isWorkspace = location.pathname.startsWith("/interview/");
+
+  return (
+    <>
+      {!isWorkspace && <Navbar />}
+      <Routes>
+        <Route path="/" element={<Protected><Home /></Protected>} />
+        <Route path="/interview/:interviewId" element={<Protected><Interview /></Protected>} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      {!isWorkspace && <Footer />}
+    </>
+  );
+}
 
 function App() {
   return (
@@ -16,15 +35,7 @@ function App() {
       <AuthProvider>
         <InterviewProvider>
           <Router>
-            <Navbar />
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/tools" element={<Tools />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-            </Routes>
-            <Footer />
+            <AppRoutes />
           </Router>
         </InterviewProvider>
       </AuthProvider>

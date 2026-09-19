@@ -9,14 +9,16 @@ const Login = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError("");
         try {
             await handleLogin({ email, password });
             navigate('/');
         } catch (err) {
-            console.error(err);
+            setError(err.response?.data?.message || "Unable to sign in. Please check your details.");
         }
     };
 
@@ -25,9 +27,15 @@ const Login = () => {
     }
 
     return (
-        <main>
+        <main className="auth-page">
+            <section className="auth-visual">
+                <Link to="/" className="auth-brand">WebDev<span>GenAI</span></Link>
+                <div><span className="auth-kicker">AI-powered development</span><h1>Turn your idea into a clear technical blueprint.</h1><p>Generate architecture, starter code and a practical deployment roadmap in one focused workspace.</p></div>
+                <div className="auth-proof"><strong>Fast. Focused. Production-ready.</strong><span>Built for developers who want to ship.</span></div>
+            </section>
             <div className="form-container">
-                <h1>Login</h1>
+                <div className="form-heading"><span>Welcome back</span><h2>Sign in to your account</h2><p>Continue building with your saved AI workspaces.</p></div>
+                {error && <div className="form-error" role="alert">{error}</div>}
                 <form onSubmit={handleSubmit}>
                     <div className="input-group">
                         <label htmlFor="email">Email</label>
@@ -43,9 +51,9 @@ const Login = () => {
                             onChange={(e) => { setPassword(e.target.value); }}
                             type="password" id="password" name='password' placeholder='Enter password' required />
                     </div>
-                    <button type="submit" className='button primary-button'>Login</button>
+                    <button type="submit" className='auth-submit'>Sign in</button>
                 </form>
-                <p>Don't have an account? <Link to={"/register"}>Register</Link> </p>
+                <p className="auth-switch">New to WebDev GenAI? <Link to={"/register"}>Create account</Link></p>
             </div>
         </main>
     );

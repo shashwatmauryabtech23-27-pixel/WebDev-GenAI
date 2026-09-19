@@ -2,9 +2,11 @@ import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import '../style/navbar.scss';
 import { useTheme } from '../../auth/hooks/useTheme';
+import { useAuth } from '../../auth/hooks/useAuth';
 
 const Navbar = () => {
     const { theme, toggleTheme } = useTheme();
+    const { user, handleLogout } = useAuth();
 
     return (
         <nav className="navbar">
@@ -21,19 +23,12 @@ const Navbar = () => {
                     WebDev<span className="navbar__logo-accent">GenAI</span>
                 </Link>
 
-                {/* Nav Links */}
                 <div className="navbar__links">
                     <NavLink
-                        to="/tools"
+                        to="/"
                         className={({ isActive }) => `navbar__link ${isActive ? 'navbar__link--active' : ''}`}
                     >
-                        All Tools
-                    </NavLink>
-                    <NavLink
-                        to="/pricing"
-                        className={({ isActive }) => `navbar__link ${isActive ? 'navbar__link--active' : ''}`}
-                    >
-                        Pricing
+                        AI Workspace
                     </NavLink>
                 </div>
 
@@ -65,12 +60,17 @@ const Navbar = () => {
                         )}
                     </button>
 
-                    <Link to="/login" className="navbar__link navbar__link--login">
-                        Login
-                    </Link>
-                    <Link to="/register" className="navbar__signup-btn">
-                        Sign up
-                    </Link>
+                    {user ? (
+                        <>
+                            <span className="navbar__user">Hi, {user.username}</span>
+                            <button className="navbar__signup-btn" onClick={handleLogout} type="button">Logout</button>
+                        </>
+                    ) : (
+                        <>
+                            <Link to="/login" className="navbar__link navbar__link--login">Login</Link>
+                            <Link to="/register" className="navbar__signup-btn">Get started</Link>
+                        </>
+                    )}
                 </div>
             </div>
         </nav>

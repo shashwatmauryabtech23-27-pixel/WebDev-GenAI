@@ -1,16 +1,22 @@
-import React, { useState, useRef } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import "../style/home.scss"
 import { useInterview } from '../hooks/useInterview.js'
 import { useNavigate } from 'react-router'
 import Loader from '../../auth/components/Loader';
 
 const Home = () => {
-    const { loading, generateReport, reports = [] } = useInterview()
+    const { loading, generateReport, getReports, reports = [] } = useInterview()
     const [jobDescription, setJobDescription] = useState("")
     const [selfDescription, setSelfDescription] = useState("")
     const [fileName, setFileName] = useState("")
     const resumeInputRef = useRef()
     const navigate = useNavigate()
+
+    useEffect(() => {
+        getReports()
+        // Load once when the protected workspace opens.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
@@ -210,8 +216,8 @@ const Home = () => {
                         <li>✓ Advanced skill gap analysis</li>
                         <li>✓ Priority code synthesis queue</li>
                     </ul>
-                    <button onClick={() => navigate('/pricing')} className="premium-banner__btn">
-                        ★ Get Premium
+                    <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="premium-banner__btn">
+                        ★ Start Building
                     </button>
                 </div>
                 <div className="premium-banner__image">

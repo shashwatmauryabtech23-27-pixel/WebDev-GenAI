@@ -5,11 +5,8 @@ import React from 'react'
 const Protected = ({children}) => {
     const { loading, user } = useAuth();
 
-    // 🔍 Yeh check karne ke liye ki state me kya chal raha hai
-    console.log("Protected Route Guard Status -> Loading:", loading, "| User:", user);
-
     if (loading) {
-        return (<main><h1>Loading Workspace...</h1></main>);
+        return (<main className="route-loader"><div className="route-loader__spinner" /><p>Loading your workspace…</p></main>);
     }
 
     if (!user) {
