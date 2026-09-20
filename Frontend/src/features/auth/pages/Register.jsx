@@ -16,7 +16,11 @@ const Register = () => {
         e.preventDefault();
         setError("");
         try {
-            await handleRegister({ username, email, password });
+            await handleRegister({
+                username: username.trim(),
+                email: email.trim().toLowerCase(),
+                password
+            });
             navigate("/");
         } catch (err) {
             setError(err.response?.data?.message || "Unable to create your account. Please try again.");
@@ -45,23 +49,26 @@ const Register = () => {
                     <div className="input-group">
                         <label htmlFor="username">Username</label>
                         <input
+                            value={username}
                             onChange={(e) => { setUsername(e.target.value); }}
                             type="text" id="username" name='username' placeholder='Enter username' required />
                     </div>
                     <div className="input-group">
                         <label htmlFor="email">Email</label>
                         <input
+                            value={email}
                             onChange={(e) => { setEmail(e.target.value); }}
                             type="email" id="email" name='email' placeholder='Enter email address' required />
                     </div>
                     <div className="input-group">
                         <label htmlFor="password">Password</label>
                         <input
+                            value={password}
                             onChange={(e) => { setPassword(e.target.value); }}
                             type="password" id="password" name='password' placeholder='Enter password' required />
                     </div>
 
-                    <button type="submit" className='auth-submit'>Create account</button>
+                    <button type="submit" className='auth-submit' disabled={loading}>Create account</button>
                 </form>
 
                 <p className="auth-switch">Already have an account? <Link to={"/login"}>Sign in</Link></p>

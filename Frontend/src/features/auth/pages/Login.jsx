@@ -15,7 +15,7 @@ const Login = () => {
         e.preventDefault();
         setError("");
         try {
-            await handleLogin({ email, password });
+            await handleLogin({ email: email.trim().toLowerCase(), password });
             navigate('/');
         } catch (err) {
             setError(err.response?.data?.message || "Unable to sign in. Please check your details.");
@@ -51,7 +51,7 @@ const Login = () => {
                             onChange={(e) => { setPassword(e.target.value); }}
                             type="password" id="password" name='password' placeholder='Enter password' required />
                     </div>
-                    <button type="submit" className='auth-submit'>Sign in</button>
+                    <button type="submit" className='auth-submit' disabled={loading}>Sign in</button>
                 </form>
                 <p className="auth-switch">New to WebDev GenAI? <Link to={"/register"}>Create account</Link></p>
             </div>
