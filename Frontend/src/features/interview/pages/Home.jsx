@@ -28,7 +28,11 @@ const Home = () => {
     const handleGenerateReport = async (e) => {
         e.preventDefault();
         if (!jobDescription.trim()) {
-            alert("Please provide an AI Application Prompt to synthesize your codebase!");
+            alert("Please paste the job description first.");
+            return;
+        }
+        if (!resumeInputRef.current?.files[0] && !selfDescription.trim()) {
+            alert("Please upload your resume PDF or add a short self description.");
             return;
         }
         const resumeFile = resumeInputRef.current?.files[0]
@@ -38,21 +42,21 @@ const Home = () => {
                 navigate(`/interview/${data._id}`)
             }
         } catch (error) {
-            console.error("Application Synthesis Failed:", error);
-            alert("System core was unable to sync synthesis pipeline. Please check your prompt constraints or try again.");
+            console.error("Interview report generation failed:", error);
+            alert(error.response?.data?.message || "Unable to generate the report. Please check your details and try again.");
         }
     }
 
     if (loading) {
-        return <Loader message="Compiling Architectural Neural Layers & Generating Sandbox Workspace..." />
+        return <Loader message="Analyzing your profile and preparing your interview report..." />
     }
 
     return (
         <div className='home-page'>
 
             <header className='page-header'>
-                <h1>Orchestrate Your <span className='highlight'>WebDev GenAI</span> App</h1>
-                <p>Pass your text description, logic prompt, or existing layouts to build enterprise production-ready full-stack architectures.</p>
+                <h1>Prepare Smarter with <span className='highlight'>WebDev GenAI</span></h1>
+                <p>Upload your resume and paste a job description to get a personalized interview plan.</p>
             </header>
 
             <form onSubmit={handleGenerateReport} className='interview-card'>
@@ -63,14 +67,14 @@ const Home = () => {
                             <span className='panel__icon'>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></svg>
                             </span>
-                            <h2>AI Application Prompt</h2>
+                            <h2>Job Description</h2>
                             <span className='badge badge--required'>Required</span>
                         </div>
                         <textarea
                             value={jobDescription}
                             onChange={(e) => setJobDescription(e.target.value)}
                             className='panel__textarea'
-                            placeholder={`Describe what app or component you want to generate...\ne.g. 'A futuristic dark mode task dashboard with drag-and-drop lists, sleek charts, and an interactive side navigation using Tailwind CSS...'`}
+                            placeholder={`Paste the complete job description here...\ne.g. role, required skills, responsibilities and experience.`}
                             maxLength={5000}
                         />
                         <div className='char-counter'>{jobDescription.length} / 5000 chars</div>
@@ -83,13 +87,13 @@ const Home = () => {
                             <span className='panel__icon'>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></svg>
                             </span>
-                            <h2>Technical Configuration</h2>
+                            <h2>Your Profile</h2>
                         </div>
 
                         <div className='upload-section'>
                             <label className='section-label'>
-                                Upload Reference Layout Docs
-                                <span className='badge badge--best'>Enhanced Model Context</span>
+                                Upload Resume
+                                <span className='badge badge--best'>Recommended</span>
                             </label>
                             <label className={`dropzone ${fileName ? 'dropzone--active' : ''}`} htmlFor='resume'>
                                 <span className='dropzone__icon'>
@@ -99,23 +103,23 @@ const Home = () => {
                                         <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16" /><line x1="12" y1="12" x2="12" y2="21" /><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" /></svg>
                                     )}
                                 </span>
-                                <p className='dropzone__title'>{fileName ? fileName : 'Click to sync mockups or boilerplate text'}</p>
-                                <p className='dropzone__subtitle'>{fileName ? 'File attached successfully' : 'PDF, DOCX, or Text Files (Max 5MB)'}</p>
-                                <input ref={resumeInputRef} onChange={handleFileChange} hidden type='file' id='resume' name='resume' accept='.pdf,.docx,.txt' />
+                                <p className='dropzone__title'>{fileName ? fileName : 'Click to upload your resume'}</p>
+                                <p className='dropzone__subtitle'>{fileName ? 'Resume attached successfully' : 'PDF only (Max 3MB)'}</p>
+                                <input ref={resumeInputRef} onChange={handleFileChange} hidden type='file' id='resume' name='resume' accept='.pdf,application/pdf' />
                             </label>
                         </div>
 
-                        <div className='or-divider'><span>OR SPECIFY CONFIG</span></div>
+                        <div className='or-divider'><span>OR ADD DETAILS</span></div>
 
                         <div className='self-description'>
-                            <label className='section-label' htmlFor='selfDescription'>Custom Framework Constraints</label>
+                            <label className='section-label' htmlFor='selfDescription'>Self Description</label>
                             <textarea
                                 value={selfDescription}
                                 onChange={(e) => setSelfDescription(e.target.value)}
                                 id='selfDescription'
                                 name='selfDescription'
                                 className='panel__textarea panel__textarea--short'
-                                placeholder="Specify tech stack preferences or state structures if any (e.g. 'Use Redux toolkit for state, strict functional components, semantic HTML5, and pure CSS variable themes')..."
+                                placeholder="Tell us about your skills, education, projects and experience..."
                             />
                         </div>
 
@@ -123,23 +127,23 @@ const Home = () => {
                             <span className='info-box__icon'>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" stroke="#fff" strokeWidth="2" /><line x1="12" y1="16" x2="12.01" y2="16" stroke="#fff" strokeWidth="2" /></svg>
                             </span>
-                            <p>Providing clear architectural constraints yields high-fidelity standalone component codebases.</p>
+                            <p>A detailed resume or self description helps AI create more relevant questions and advice.</p>
                         </div>
                     </div>
                 </div>
 
                 <div className='interview-card__footer'>
-                    <span className='footer-info'>Neural Code Synthesis Active &bull; Compiles in ~30s</span>
+                    <span className='footer-info'>Powered by Gemini AI &bull; Usually takes about 30 seconds</span>
                     <button type='submit' className='generate-btn'>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" /></svg>
-                        Synthesize Full-Stack Application
+                        Generate Interview Report
                     </button>
                 </div>
             </form>
 
             {reports.length > 0 && (
                 <section className='recent-reports'>
-                    <h2>My Recent AI Applications</h2>
+                    <h2>Recent Interview Reports</h2>
                     <div className='reports-list'>
                         {reports.map(report => (
                             <div
@@ -147,9 +151,9 @@ const Home = () => {
                                 className='report-item'
                                 onClick={() => navigate(`/interview/${report._id}`)}
                             >
-                                <h3>{report.title || 'Untitled Sandbox Project'}</h3>
-                                <p className='report-meta'>Compiled on {new Date(report.createdAt).toLocaleDateString()}</p>
-                                <span className={`match-score`}>Optimization Index: {report.matchScore || 100}%</span>
+                                <h3>{report.title || 'Interview Preparation Report'}</h3>
+                                <p className='report-meta'>Created on {new Date(report.createdAt).toLocaleDateString()}</p>
+                                <span className='match-score'>Job Match: {report.matchScore ?? 0}%</span>
                             </div>
                         ))}
                     </div>

@@ -2,8 +2,8 @@
 import { createContext, useState } from "react";
 import {
   getAllInterviewReports,
-  generateInterviewReport,     // <-- MISSING IMPORT ADDED
-  getInterviewReportById,       // <-- MISSING IMPORT ADDED
+  generateInterviewReport,
+  getInterviewReportById,
   generateResumePdf
 } from "./services/interview.api.js"; 
 
@@ -20,24 +20,23 @@ export const InterviewProvider = ({ children }) => {
             setReports(data.interviewReports || []);
             return data.interviewReports || [];
         } catch (error) {
-            console.error("Failed to load workspaces:", error);
+            console.error("Failed to load interview reports:", error);
             return [];
         }
     };
 
     /**
-     * @description Orchestrates the payload delivery to WebDev-GenAI pipelines
+     * @description Generates a personalized interview report.
      */
     const generateReport = async ({ jobDescription, selfDescription, resumeFile }) => {
         setLoading(true);
         try {
             const data = await generateInterviewReport({ jobDescription, selfDescription, resumeFile });
-            // Add new architecture to the active list snapshot
             setReports(prev => [data.interviewReport, ...prev]);
             setReport(data.interviewReport);
             return data.interviewReport;
         } catch (error) {
-            console.error("Context Error - Code Synthesis Failed:", error);
+            console.error("Interview report generation failed:", error);
             throw error;
         } finally {
             setLoading(false);
@@ -45,7 +44,7 @@ export const InterviewProvider = ({ children }) => {
     };
 
     /**
-     * @description Syncs the application context state with a specific workspace build
+     * @description Loads a saved interview report.
      */
     const getReportById = async (interviewId) => {
         setLoading(true);
@@ -54,7 +53,7 @@ export const InterviewProvider = ({ children }) => {
             setReport(data.interviewReport);
             return data.interviewReport;
         } catch (error) {
-            console.error("Context Error - Fetching Build Details Failed:", error);
+            console.error("Failed to fetch interview report:", error);
             setReport(null);
         } finally {
             setLoading(false);
@@ -62,13 +61,13 @@ export const InterviewProvider = ({ children }) => {
     };
 
     /**
-     * @description Triggers the binary build downloader service
+     * @description Downloads an ATS-optimized resume PDF.
      */
     const getResumePdf = async (interviewReportId) => {
         try {
             await generateResumePdf(interviewReportId);
         } catch (error) {
-            console.error("Context Error - Exporting Build ZIP Failed:", error);
+            console.error("Failed to download resume PDF:", error);
         }
     };
 

@@ -9,32 +9,43 @@ const interviewReportModel = require("../models/interviewReport.model")
  * @description Controller to generate interview report based on user self description, resume and job description.
  */
 async function generateInterViewReportController(req, res) {
+    try {
+        let resumeText = ""
+        if (req.file) {
+            const resumeContent = await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText()
+            resumeText = resumeContent.text
+        }
+        const { selfDescription = "", jobDescription = "" } = req.body
 
-    let resumeText = ""
-    if (req.file) {
-        const resumeContent = await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText()
-        resumeText = resumeContent.text
+        if (!jobDescription.trim()) {
+            return res.status(400).json({ message: "Job description is required." })
+        }
+        if (!resumeText.trim() && !selfDescription.trim()) {
+            return res.status(400).json({ message: "Upload a resume PDF or provide a self description." })
+        }
+
+        const interViewReportByAi = await generateInterviewReport({
+            resume: resumeText,
+            selfDescription,
+            jobDescription
+        })
+
+        const interviewReport = await interviewReportModel.create({
+            user: req.user.id,
+            resume: resumeText,
+            selfDescription,
+            jobDescription,
+            ...interViewReportByAi
+        })
+
+        res.status(201).json({
+            message: "Interview report generated successfully.",
+            interviewReport
+        })
+    } catch (error) {
+        console.error("Interview report generation failed:", error.message)
+        res.status(500).json({ message: "Unable to generate interview report. Check the Gemini API configuration and try again." })
     }
-    const { selfDescription, jobDescription } = req.body
-
-    const interViewReportByAi = await generateInterviewReport({
-        resume: resumeText,
-        selfDescription,
-        jobDescription
-    })
-
-    const interviewReport = await interviewReportModel.create({
-        user: req.user.id,
-        resume: resumeText,
-        selfDescription,
-        jobDescription,
-        ...interViewReportByAi
-    })
-
-    res.status(201).json({
-        message: "Interview report generated successfully.",
-        interviewReport
-    })
 
 }
 
@@ -79,7 +90,7 @@ async function getAllInterviewReportsController(req, res) {
 async function generateResumePdfController(req, res) {
     const { interviewReportId } = req.params
 
-    const interviewReport = await interviewReportModel.findById(interviewReportId)
+    const interviewReport = await interviewReportModel.findOne({ _id: interviewReportId, user: req.user.id })
 
     if (!interviewReport) {
         return res.status(404).json({
