@@ -48,3 +48,13 @@ export async function getMe() {
         throw err;
     }
 }
+
+export async function forgotPassword(email) {
+    const response = await api.post("/api/auth/forgot-password", { email });
+    return response.data;
+}
+
+export async function resetPassword(token, password, confirmPassword) {
+    const response = await api.post(`/api/auth/reset-password/${token}`, { password, confirmPassword });
+    return response.data;
+}

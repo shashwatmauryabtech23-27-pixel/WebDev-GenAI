@@ -4,6 +4,8 @@ import Navbar from "./features/interview/pages/Navbar";
 import Footer from "./features/interview/pages/Footer";
 import Login from "./features/auth/pages/Login";
 import Register from "./features/auth/pages/Register";
+import ForgotPassword from "./features/auth/pages/ForgotPassword";
+import ResetPassword from "./features/auth/pages/ResetPassword";
 import Interview from "./features/interview/pages/Interview";
 import Protected from "./features/auth/components/Protected";
 import { InterviewProvider } from "./features/interview/interview.context";
@@ -13,7 +15,7 @@ import { ThemeProvider } from "./context/theme.context";
 function AppRoutes() {
   const location = useLocation();
   const isWorkspace = location.pathname.startsWith("/interview/");
-  const isAuthPage = ["/login", "/register"].includes(location.pathname);
+  const isAuthPage = ["/login", "/register", "/forgot-password"].includes(location.pathname) || location.pathname.startsWith("/reset-password/");
 
   return (
     <>
@@ -23,6 +25,8 @@ function AppRoutes() {
         <Route path="/interview/:interviewId" element={<Protected><Interview /></Protected>} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       {!isWorkspace && !isAuthPage && <Footer />}

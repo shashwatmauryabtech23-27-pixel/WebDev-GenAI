@@ -2,6 +2,8 @@ const userModel = require("../models/user.model")
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 const tokenBlacklistModel = require("../models/blacklist.model")
+const crypto = require("node:crypto")
+const { sendPasswordResetEmail } = require("../services/email.service")
 
 /**
  * @name registerUserController
@@ -188,11 +190,90 @@ async function getMeController(req, res) {
 
 }
 
+async function forgotPasswordController(req, res) {
+    try {
+        const email = req.body.email?.trim().toLowerCase()
+
+        if (!email) {
+            return res.status(400).json({ message: "Email is required." })
+        }
+
+        const user = await userModel.findOne({ email })
+
+        // Always return the same response so attackers cannot discover accounts.
+        if (!user) {
+            return res.status(200).json({ message: "If an account exists for this email, a password reset link has been sent." })
+        }
+
+        const resetToken = crypto.randomBytes(32).toString("hex")
+        user.passwordResetToken = crypto.createHash("sha256").update(resetToken).digest("hex")
+        user.passwordResetExpires = Date.now() + 15 * 60 * 1000
+        await user.save()
+
+        try {
+            await sendPasswordResetEmail({ to: user.email, username: user.username, resetToken })
+        } catch (emailError) {
+            user.passwordResetToken = undefined
+            user.passwordResetExpires = undefined
+            await user.save()
+            throw emailError
+        }
+
+        return res.status(200).json({ message: "If an account exists for this email, a password reset link has been sent." })
+    } catch (error) {
+        console.error("Forgot password error:", error.message)
+        return res.status(500).json({ message: "Unable to send the reset email right now. Please try again." })
+    }
+}
+
+async function resetPasswordController(req, res) {
+    try {
+        const password = req.body.password
+        const confirmPassword = req.body.confirmPassword
+        const hashedToken = crypto.createHash("sha256").update(req.params.token).digest("hex")
+
+        if (!password || password.length < 8) {
+            return res.status(400).json({ message: "Password must contain at least 8 characters." })
+        }
+
+        if (password !== confirmPassword) {
+            return res.status(400).json({ message: "Passwords do not match." })
+        }
+
+        const user = await userModel.findOne({
+            passwordResetToken: hashedToken,
+            passwordResetExpires: { $gt: Date.now() }
+        })
+
+        if (!user) {
+            return res.status(400).json({ message: "This reset link is invalid or has expired." })
+        }
+
+        user.password = await bcrypt.hash(password, 10)
+        user.passwordResetToken = undefined
+        user.passwordResetExpires = undefined
+        await user.save()
+
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+        })
+
+        return res.status(200).json({ message: "Password reset successfully. You can now sign in." })
+    } catch (error) {
+        console.error("Reset password error:", error.message)
+        return res.status(500).json({ message: "Unable to reset the password right now. Please try again." })
+    }
+}
+
 
 
 module.exports = {
     registerUserController,
     loginUserController,
     logoutUserController,
-    getMeController
+    getMeController,
+    forgotPasswordController,
+    resetPasswordController
 }
