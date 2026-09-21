@@ -13,10 +13,11 @@ import { ThemeProvider } from "./context/theme.context";
 function AppRoutes() {
   const location = useLocation();
   const isWorkspace = location.pathname.startsWith("/interview/");
+  const isAuthPage = ["/login", "/register"].includes(location.pathname);
 
   return (
     <>
-      {!isWorkspace && <Navbar />}
+      {!isWorkspace && !isAuthPage && <Navbar />}
       <Routes>
         <Route path="/" element={<Protected><Home /></Protected>} />
         <Route path="/interview/:interviewId" element={<Protected><Interview /></Protected>} />
@@ -24,7 +25,7 @@ function AppRoutes() {
         <Route path="/register" element={<Register />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      {!isWorkspace && <Footer />}
+      {!isWorkspace && !isAuthPage && <Footer />}
     </>
   );
 }

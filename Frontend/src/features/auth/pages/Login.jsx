@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router';
+import { useNavigate, Link } from 'react-router-dom';
 import "../auth.form.scss";
 import { useAuth } from '../hooks/useAuth';
 import Loader from '../components/Loader'; // <-- CORRECTED PATH
@@ -10,14 +10,17 @@ const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [errorCode, setErrorCode] = useState("");
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
+        setErrorCode("");
         try {
-            await handleLogin({ email, password });
+            await handleLogin({ email: email.trim(), password });
             navigate('/');
         } catch (err) {
+            setErrorCode(err.response?.data?.code || "");
             setError(err.response?.data?.message || "Unable to sign in. Please check your details.");
         }
     };
@@ -35,23 +38,23 @@ const Login = () => {
             </section>
             <div className="form-container">
                 <div className="form-heading"><span>Welcome back</span><h2>Sign in to your account</h2><p>Continue building with your saved AI workspaces.</p></div>
-                {error && <div className="form-error" role="alert">{error}</div>}
+                {error && <div className="form-error" role="alert">{error} {errorCode === "ACCOUNT_NOT_FOUND" && <Link to="/register">Create account</Link>}</div>}
                 <form onSubmit={handleSubmit}>
                     <div className="input-group">
                         <label htmlFor="email">Email</label>
                         <input
                             value={email}
                             onChange={(e) => { setEmail(e.target.value); }}
-                            type="email" id="email" name='email' placeholder='Enter email address' required />
+                            type="email" id="email" name='email' placeholder='Enter email address' autoComplete="email" required />
                     </div>
                     <div className="input-group">
                         <label htmlFor="password">Password</label>
                         <input
                             value={password}
                             onChange={(e) => { setPassword(e.target.value); }}
-                            type="password" id="password" name='password' placeholder='Enter password' required />
+                            type="password" id="password" name='password' placeholder='Enter password' autoComplete="current-password" required />
                     </div>
-                    <button type="submit" className='auth-submit'>Sign in</button>
+                    <button type="submit" className='auth-submit' disabled={loading}>{loading ? "Signing in…" : "Sign in"}</button>
                 </form>
                 <p className="auth-switch">New to WebDev GenAI? <Link to={"/register"}>Create account</Link></p>
             </div>
