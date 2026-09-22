@@ -1,7 +1,22 @@
 const pdfParse = require("pdf-parse")
+const crypto = require("node:crypto")
 const { generateInterviewReport, generateResumePdf } = require("../services/ai.service")
 const interviewReportModel = require("../models/interviewReport.model")
 
+function normalizeInput(value = "") {
+    return value.trim().replace(/\s+/g, " ").toLowerCase()
+}
+
+function createInputHash({ resume, selfDescription, jobDescription }) {
+    return crypto
+        .createHash("sha256")
+        .update(JSON.stringify({
+            resume: normalizeInput(resume),
+            selfDescription: normalizeInput(selfDescription),
+            jobDescription: normalizeInput(jobDescription)
+        }))
+        .digest("hex")
+}
 
 
 
@@ -24,6 +39,32 @@ async function generateInterViewReportController(req, res) {
             return res.status(400).json({ message: "Upload a resume PDF or provide a self description." })
         }
 
+        const inputHash = createInputHash({ resume: resumeText, selfDescription, jobDescription })
+        let existingReport = await interviewReportModel.findOne({ user: req.user.id, inputHash })
+
+        // Reuse matching reports created before inputHash was introduced.
+        if (!existingReport) {
+            existingReport = await interviewReportModel.findOne({
+                user: req.user.id,
+                resume: resumeText,
+                selfDescription,
+                jobDescription
+            }).sort({ createdAt: -1 })
+
+            if (existingReport && !existingReport.inputHash) {
+                existingReport.inputHash = inputHash
+                await existingReport.save()
+            }
+        }
+
+        if (existingReport) {
+            return res.status(200).json({
+                message: "Existing interview report reused for the same resume and job description.",
+                reused: true,
+                interviewReport: existingReport
+            })
+        }
+
         const interViewReportByAi = await generateInterviewReport({
             resume: resumeText,
             selfDescription,
@@ -35,6 +76,7 @@ async function generateInterViewReportController(req, res) {
             resume: resumeText,
             selfDescription,
             jobDescription,
+            inputHash,
             ...interViewReportByAi
         })
 
@@ -75,7 +117,31 @@ async function getInterviewReportByIdController(req, res) {
  * @description Controller to get all interview reports of logged in user.
  */
 async function getAllInterviewReportsController(req, res) {
-    const interviewReports = await interviewReportModel.find({ user: req.user.id }).sort({ createdAt: -1 }).select("-resume -selfDescription -jobDescription -__v -technicalQuestions -behavioralQuestions -skillGaps -preparationPlan")
+    const reports = await interviewReportModel
+        .find({ user: req.user.id })
+        .sort({ createdAt: -1 })
+        .select("-__v -technicalQuestions -behavioralQuestions -skillGaps -preparationPlan")
+
+    const seenInputs = new Set()
+    const interviewReports = []
+
+    for (const report of reports) {
+        const fingerprint = createInputHash({
+            resume: report.resume || "",
+            selfDescription: report.selfDescription || "",
+            jobDescription: report.jobDescription || ""
+        })
+
+        if (seenInputs.has(fingerprint)) continue
+        seenInputs.add(fingerprint)
+
+        const safeReport = report.toObject()
+        delete safeReport.resume
+        delete safeReport.selfDescription
+        delete safeReport.jobDescription
+        delete safeReport.inputHash
+        interviewReports.push(safeReport)
+    }
 
     res.status(200).json({
         message: "Interview reports fetched successfully.",

@@ -75,6 +75,10 @@ const interviewReportSchema = new mongoose.Schema({
     selfDescription: {
         type: String,
     },
+    inputHash: {
+        type: String,
+        select: false,
+    },
     matchScore: {
         type: Number,
         min: 0,
@@ -96,7 +100,14 @@ const interviewReportSchema = new mongoose.Schema({
     timestamps: true
 })
 
+// Only newly generated reports have inputHash. The partial index avoids
+// conflicts with reports created before deterministic report reuse was added.
+interviewReportSchema.index(
+    { user: 1, inputHash: 1 },
+    { unique: true, partialFilterExpression: { inputHash: { $type: "string" } } }
+)
+
 
 const interviewReportModel = mongoose.model("InterviewReport", interviewReportSchema);
 
-module.exports = interviewReportModel;  
+module.exports = interviewReportModel;

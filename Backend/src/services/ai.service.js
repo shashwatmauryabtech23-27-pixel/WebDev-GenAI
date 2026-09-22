@@ -47,6 +47,8 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
         model: GEMINI_MODEL,
         contents: prompt,
         config: {
+            temperature: 0,
+            seed: 42,
             responseMimeType: "application/json",
             responseSchema: zodToJsonSchema(interviewReportSchema),
         }
