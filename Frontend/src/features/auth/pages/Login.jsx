@@ -3,9 +3,10 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import "../auth.form.scss";
 import { useAuth } from '../hooks/useAuth';
 import Loader from '../components/Loader'; // <-- CORRECTED PATH
+import GoogleSignIn from '../components/GoogleSignIn';
 
 const Login = () => {
-    const { loading, handleLogin } = useAuth();
+    const { loading, handleLogin, handleGoogleLogin } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [email, setEmail] = useState("");
@@ -26,6 +27,16 @@ const Login = () => {
         }
     };
 
+    const handleGoogle = async (credential) => {
+        setError("");
+        try {
+            await handleGoogleLogin(credential);
+            navigate('/');
+        } catch (err) {
+            setError(err.response?.data?.message || "Google sign-in failed. Please try again.");
+        }
+    };
+
     if (loading) {
         return <Loader message="Authenticating Workspace Core & Syncing Session..." />;
     }
@@ -41,6 +52,8 @@ const Login = () => {
                 <div className="form-heading"><span>Welcome back</span><h2>Sign in to your account</h2><p>Continue building with your saved AI workspaces.</p></div>
                 {location.state?.passwordReset && <div className="form-success" role="status">Password reset successfully. Sign in with your new password.</div>}
                 {error && <div className="form-error" role="alert">{error} {errorCode === "ACCOUNT_NOT_FOUND" && <Link to="/register">Create account</Link>}</div>}
+                <GoogleSignIn onSuccess={handleGoogle} onError={() => setError("Unable to load Google sign-in.")} />
+                <div className="auth-divider"><span>or continue with email</span></div>
                 <form onSubmit={handleSubmit}>
                     <div className="input-group">
                         <label htmlFor="email">Email</label>

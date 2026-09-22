@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useState, useEffect } from "react";
-import { login, register, logout, getMe } from "./services/auth.api.js";
+import { login, register, logout, getMe, googleLogin } from "./services/auth.api.js";
 
 export const AuthContext = createContext();
 
@@ -64,6 +64,17 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const handleGoogleLogin = async (credential) => {
+        setLoading(true);
+        try {
+            const data = await googleLogin(credential);
+            if (data?.user) setUser(data.user);
+            return data;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     /**
      * @description Terminates active token verification parameters gracefully
      */
@@ -87,6 +98,7 @@ export const AuthProvider = ({ children }) => {
             setLoading,
             handleLogin,
             handleRegister,
+            handleGoogleLogin,
             handleLogout
         }} >
             {children}

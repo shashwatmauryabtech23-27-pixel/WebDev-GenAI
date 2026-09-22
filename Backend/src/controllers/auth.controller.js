@@ -4,6 +4,44 @@ const jwt = require("jsonwebtoken")
 const tokenBlacklistModel = require("../models/blacklist.model")
 const crypto = require("node:crypto")
 const { sendPasswordResetEmail } = require("../services/email.service")
+const { getApps, initializeApp, cert } = require("firebase-admin/app")
+const { getAuth } = require("firebase-admin/auth")
+
+function getFirebaseAuth() {
+    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+        return null
+    }
+
+    if (!getApps().length) {
+        initializeApp({
+            credential: cert({
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n")
+            })
+        })
+    }
+    return getAuth()
+}
+
+function setAuthCookie(res, user) {
+    const token = jwt.sign(
+        { id: user._id, username: user.username },
+        process.env.JWT_SECRET,
+        { expiresIn: "1d" }
+    )
+
+    res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 24 * 60 * 60 * 1000
+    })
+}
+
+function publicUser(user) {
+    return { id: user._id, username: user.username, email: user.email }
+}
 
 /**
  * @name registerUserController
@@ -85,6 +123,49 @@ async function registerUserController(req, res) {
     }
 }
 
+async function googleLoginController(req, res) {
+    try {
+        const firebaseAuth = getFirebaseAuth()
+        if (!firebaseAuth) {
+            return res.status(503).json({ code: "FIREBASE_NOT_CONFIGURED", message: "Firebase sign-in is not configured yet." })
+        }
+
+        const idToken = req.body.idToken
+        if (!idToken) {
+            return res.status(400).json({ code: "MISSING_FIREBASE_TOKEN", message: "Firebase ID token is required." })
+        }
+
+        const payload = await firebaseAuth.verifyIdToken(idToken)
+
+        if (!payload?.email || !payload.email_verified) {
+            return res.status(401).json({ code: "UNVERIFIED_GOOGLE_EMAIL", message: "Please use a verified Google account." })
+        }
+
+        const email = payload.email.toLowerCase()
+        let user = await userModel.findOne({ $or: [{ googleId: payload.uid }, { email }] })
+
+        if (user) {
+            if (!user.googleId) {
+                user.googleId = payload.uid
+                await user.save()
+            }
+        } else {
+            const base = (payload.name || email.split("@")[0]).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 24) || "user"
+            let username = base
+            let suffix = 1
+            while (await userModel.exists({ username })) username = `${base.slice(0, 24)}${suffix++}`
+
+            user = await userModel.create({ username, email, googleId: payload.uid })
+        }
+
+        setAuthCookie(res, user)
+        return res.status(200).json({ message: "Signed in with Google successfully.", user: publicUser(user) })
+    } catch (error) {
+        console.error("Google login error:", error.message)
+        return res.status(401).json({ code: "GOOGLE_LOGIN_FAILED", message: "Google sign-in failed. Please try again." })
+    }
+}
+
 
 /**
  * @name loginUserController
@@ -106,6 +187,13 @@ async function loginUserController(req, res) {
         return res.status(404).json({
             code: "ACCOUNT_NOT_FOUND",
             message: "No account was found with this email. Please register first."
+        })
+    }
+
+    if (!user.password) {
+        return res.status(400).json({
+            code: "GOOGLE_ACCOUNT",
+            message: "This account uses Google sign-in. Please continue with Google."
         })
     }
 
@@ -275,5 +363,6 @@ module.exports = {
     logoutUserController,
     getMeController,
     forgotPasswordController,
-    resetPasswordController
+    resetPasswordController,
+    googleLoginController
 }

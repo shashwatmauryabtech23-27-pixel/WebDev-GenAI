@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import "../auth.form.scss"; // <-- MISSING STYLE COUPLING ADDED
+import GoogleSignIn from '../components/GoogleSignIn';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -11,7 +12,7 @@ const Register = () => {
     const [error, setError] = useState("");
     const [errorCode, setErrorCode] = useState("");
 
-    const { loading, handleRegister } = useAuth();
+    const { loading, handleRegister, handleGoogleLogin } = useAuth();
     
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -23,6 +24,16 @@ const Register = () => {
         } catch (err) {
             setErrorCode(err.response?.data?.code || "");
             setError(err.response?.data?.message || "Unable to create your account. Please try again.");
+        }
+    };
+
+    const handleGoogle = async (credential) => {
+        setError("");
+        try {
+            await handleGoogleLogin(credential);
+            navigate('/');
+        } catch (err) {
+            setError(err.response?.data?.message || "Google sign-up failed. Please try again.");
         }
     };
 
@@ -44,6 +55,8 @@ const Register = () => {
             <div className="form-container">
                 <div className="form-heading"><span>Start for free</span><h2>Create your account</h2><p>No complicated setup. Start generating in seconds.</p></div>
                 {error && <div className="form-error" role="alert">{error} {errorCode === "ACCOUNT_EXISTS" && <Link to="/login">Go to login</Link>}</div>}
+                <GoogleSignIn onSuccess={handleGoogle} onError={() => setError("Unable to load Google sign-in.")} />
+                <div className="auth-divider"><span>or create with email</span></div>
                 <form onSubmit={handleSubmit}>
                     <div className="input-group">
                         <label htmlFor="username">Username</label>
