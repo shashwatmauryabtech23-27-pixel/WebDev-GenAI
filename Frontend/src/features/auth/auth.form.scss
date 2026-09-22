@@ -30,7 +30,7 @@
 .google-signin { width: 100%; min-height: 44px; margin-top: 1.5rem; display: flex; align-items: center; justify-content: center; gap: .7rem; border: 1px solid var(--border-color); border-radius: .75rem; color: var(--text-primary); background: var(--bg-input); font: inherit; font-weight: 700; cursor: pointer; }
 .google-signin:hover { border-color: var(--accent); }
 .google-signin:disabled { opacity: .65; cursor: wait; }
-.google-g { color: #4285f4; font-size: 1.15rem; font-weight: 900; }
+.google-logo { width: 1.15rem; height: 1.15rem; flex: 0 0 auto; }
 .google-config-note { margin-top: 1.25rem; padding: .7rem; text-align: center; color: var(--text-muted); background: var(--bg-input); border-radius: .7rem; font-size: .82rem; }
 .auth-divider { display: flex; align-items: center; gap: .75rem; margin: 1rem 0 -.75rem; color: var(--text-muted); font-size: .76rem; }
 .auth-divider::before, .auth-divider::after { content: ""; height: 1px; flex: 1; background: var(--border-color); }
