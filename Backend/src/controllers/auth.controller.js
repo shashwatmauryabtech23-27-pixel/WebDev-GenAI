@@ -37,6 +37,8 @@ function setAuthCookie(res, user) {
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 24 * 60 * 60 * 1000
     })
+
+    return token
 }
 
 function publicUser(user) {
@@ -108,6 +110,7 @@ async function registerUserController(req, res) {
 
     return res.status(201).json({
         message: "User registered successfully",
+        token,
         user: {
             id: user._id,
             username: user.username,
@@ -158,8 +161,8 @@ async function googleLoginController(req, res) {
             user = await userModel.create({ username, email, googleId: payload.uid })
         }
 
-        setAuthCookie(res, user)
-        return res.status(200).json({ message: "Signed in with Google successfully.", user: publicUser(user) })
+        const token = setAuthCookie(res, user)
+        return res.status(200).json({ message: "Signed in with Google successfully.", user: publicUser(user), token })
     } catch (error) {
         console.error("Google login error:", error.message)
         return res.status(401).json({ code: "GOOGLE_LOGIN_FAILED", message: "Google sign-in failed. Please try again." })
@@ -220,6 +223,7 @@ async function loginUserController(req, res) {
     })
     return res.status(200).json({
         message: "Logged in successfully.",
+        token,
         user: {
             id: user._id,
             username: user.username,
@@ -239,7 +243,9 @@ async function loginUserController(req, res) {
  * @access public
  */
 async function logoutUserController(req, res) {
-    const token = req.cookies.token
+    const authorization = req.headers.authorization
+    const bearerToken = authorization?.startsWith("Bearer ") ? authorization.slice(7) : null
+    const token = req.cookies?.token || bearerToken
 
     if (token) {
         await tokenBlacklistModel.create({ token })

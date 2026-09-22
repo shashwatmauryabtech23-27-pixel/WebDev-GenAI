@@ -5,12 +5,22 @@ const api = axios.create({
     withCredentials: true
 });
 
+const authHeaders = () => {
+    const token = localStorage.getItem("authToken");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+const saveToken = (data) => {
+    if (data?.token) localStorage.setItem("authToken", data.token);
+    return data;
+};
+
 export async function register({ username, email, password }) {
     try {
         const response = await api.post('/api/auth/register', {
             username, email, password
         });
-        return response.data;
+        return saveToken(response.data);
     } catch (err) {
         console.error("Network Layer Exception: Registration failed ->", err);
         throw err; // Propagate down to UI handlers
@@ -22,7 +32,7 @@ export async function login({ email, password }) {
         const response = await api.post("/api/auth/login", {
             email, password
         });
-        return response.data;
+        return saveToken(response.data);
     } catch (err) {
         console.error("Network Layer Exception: Login verification failed ->", err);
         throw err;
@@ -31,12 +41,13 @@ export async function login({ email, password }) {
 
 export async function googleLogin(idToken) {
     const response = await api.post("/api/auth/google", { idToken });
-    return response.data;
+    return saveToken(response.data);
 }
 
 export async function logout() {
     try {
-        const response = await api.get("/api/auth/logout");
+        const response = await api.get("/api/auth/logout", { headers: authHeaders() });
+        localStorage.removeItem("authToken");
         return response.data;
     } catch (err) {
         console.error("Network Layer Exception: Log-out pipeline failure ->", err);
@@ -46,7 +57,7 @@ export async function logout() {
 
 export async function getMe() {
     try {
-        const response = await api.get("/api/auth/get-me");
+        const response = await api.get("/api/auth/get-me", { headers: authHeaders() });
         return response.data;
     } catch (err) {
         console.error("Network Layer Exception: Token extraction failed ->", err);
