@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 import "../style/home.scss"
 import { useInterview } from '../hooks/useInterview.js'
 import { useNavigate } from 'react-router'
@@ -8,8 +8,8 @@ const Home = () => {
     const { loading, generateReport, getReports, reports = [] } = useInterview()
     const [jobDescription, setJobDescription] = useState("")
     const [selfDescription, setSelfDescription] = useState("")
+    const [resumeFile, setResumeFile] = useState(null)
     const [fileName, setFileName] = useState("")
-    const resumeInputRef = useRef()
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -19,10 +19,30 @@ const Home = () => {
     }, [])
 
     const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setFileName(file.name);
+        const file = e.target.files?.[0]
+
+        if (!file) {
+            setResumeFile(null)
+            setFileName("")
+            return
         }
+        if (file.type !== "application/pdf") {
+            alert("Please select a PDF resume.")
+            e.target.value = ""
+            setResumeFile(null)
+            setFileName("")
+            return
+        }
+        if (file.size > 3 * 1024 * 1024) {
+            alert("Resume PDF must be smaller than 3MB.")
+            e.target.value = ""
+            setResumeFile(null)
+            setFileName("")
+            return
+        }
+
+        setResumeFile(file)
+        setFileName(file.name)
     }
 
     const handleGenerateReport = async (e) => {
@@ -31,11 +51,10 @@ const Home = () => {
             alert("Please paste the job description first.");
             return;
         }
-        if (!resumeInputRef.current?.files[0] && !selfDescription.trim()) {
+        if (!resumeFile && !selfDescription.trim()) {
             alert("Please upload your resume PDF or add a short self description.");
             return;
         }
-        const resumeFile = resumeInputRef.current?.files[0]
         try {
             const data = await generateReport({ jobDescription, selfDescription, resumeFile })
             if (data && data._id) {
@@ -105,7 +124,7 @@ const Home = () => {
                                 </span>
                                 <p className='dropzone__title'>{fileName ? fileName : 'Click to upload your resume'}</p>
                                 <p className='dropzone__subtitle'>{fileName ? 'Resume attached successfully' : 'PDF only (Max 3MB)'}</p>
-                                <input ref={resumeInputRef} onChange={handleFileChange} hidden type='file' id='resume' name='resume' accept='.pdf,application/pdf' />
+                                <input onChange={handleFileChange} hidden type='file' id='resume' name='resume' accept='.pdf,application/pdf' />
                             </label>
                         </div>
 
