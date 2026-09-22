@@ -2,90 +2,29 @@ $font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, s
 
 .site-footer {
     width: 100%;
-    background-color: var(--bg-card);
-    border-top: 1px solid var(--border-color);
     margin-top: auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-top: 1px solid #e5e7eb;
     font-family: $font-stack;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
 
-    &__container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 3rem 1.5rem 2rem;
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 2rem;
-
-        @media (max-width: 900px) {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
-        @media (max-width: 480px) {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    &__bottom {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 1.25rem 1.5rem;
-        border-top: 1px solid var(--border-color);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 1rem;
-
-        span {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
+    p {
+        margin: 0;
+        text-align: center;
+        font-size: 14px;
+        color: #475569;
     }
 }
 
-.footer-col {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
+[data-theme='dark'] .site-footer {
+    background-color: #111827;
+    border-top-color: #273244;
 
-    h4 {
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--text-primary);
-        margin: 0 0 0.4rem;
-    }
-
-    a {
-        font-size: 0.85rem;
-        color: var(--text-muted);
-        text-decoration: none;
-        transition: color 0.2s;
-
-        &:hover {
-            color: var(--accent);
-        }
-    }
-}
-
-.social-icons {
-    display: flex;
-    gap: 1rem;
-
-    a {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background-color: var(--bg-input);
-        color: var(--text-muted);
-        transition: color 0.2s, background-color 0.2s;
-
-        &:hover {
-            color: var(--accent);
-            background-color: var(--bg-panel);
-        }
+    p {
+        color: #cbd5e1;
     }
 }
