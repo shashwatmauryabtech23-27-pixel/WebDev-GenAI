@@ -4,8 +4,10 @@ const { zodToJsonSchema } = require("zod-to-json-schema")
 const puppeteer = require("puppeteer")
 
 const ai = new GoogleGenAI({
-    apiKey: process.env.GOOGLE_GENAI_API_KEY
+    apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY
 })
+
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash"
 
 
 const interviewReportSchema = z.object({
@@ -42,7 +44,7 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
 `
 
     const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: GEMINI_MODEL,
         contents: prompt,
         config: {
             responseMimeType: "application/json",
@@ -96,7 +98,7 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }) {
                     `
 
     const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: GEMINI_MODEL,
         contents: prompt,
         config: {
             responseMimeType: "application/json",

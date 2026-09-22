@@ -18,6 +18,8 @@ authRouter.post("/register", authController.registerUserController)
  * @access Public
  */
 authRouter.post("/login", authController.loginUserController)
+authRouter.post("/forgot-password", authController.forgotPasswordController)
+authRouter.post("/reset-password/:token", authController.resetPasswordController)
 
 
 /**

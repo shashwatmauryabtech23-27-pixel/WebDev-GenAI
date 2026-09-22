@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import "../auth.form.scss"; // <-- MISSING STYLE COUPLING ADDED
 
@@ -9,16 +9,19 @@ const Register = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [errorCode, setErrorCode] = useState("");
 
     const { loading, handleRegister } = useAuth();
     
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
+        setErrorCode("");
         try {
-            await handleRegister({ username, email, password });
+            await handleRegister({ username: username.trim(), email: email.trim(), password });
             navigate("/");
         } catch (err) {
+            setErrorCode(err.response?.data?.code || "");
             setError(err.response?.data?.message || "Unable to create your account. Please try again.");
         }
     };
@@ -40,28 +43,28 @@ const Register = () => {
             </section>
             <div className="form-container">
                 <div className="form-heading"><span>Start for free</span><h2>Create your account</h2><p>No complicated setup. Start generating in seconds.</p></div>
-                {error && <div className="form-error" role="alert">{error}</div>}
+                {error && <div className="form-error" role="alert">{error} {errorCode === "ACCOUNT_EXISTS" && <Link to="/login">Go to login</Link>}</div>}
                 <form onSubmit={handleSubmit}>
                     <div className="input-group">
                         <label htmlFor="username">Username</label>
                         <input
-                            onChange={(e) => { setUsername(e.target.value); }}
-                            type="text" id="username" name='username' placeholder='Enter username' required />
+                            value={username} onChange={(e) => { setUsername(e.target.value); }}
+                            type="text" id="username" name='username' placeholder='Enter username' autoComplete="username" minLength="3" maxLength="30" required />
                     </div>
                     <div className="input-group">
                         <label htmlFor="email">Email</label>
                         <input
-                            onChange={(e) => { setEmail(e.target.value); }}
-                            type="email" id="email" name='email' placeholder='Enter email address' required />
+                            value={email} onChange={(e) => { setEmail(e.target.value); }}
+                            type="email" id="email" name='email' placeholder='Enter email address' autoComplete="email" required />
                     </div>
                     <div className="input-group">
                         <label htmlFor="password">Password</label>
                         <input
-                            onChange={(e) => { setPassword(e.target.value); }}
-                            type="password" id="password" name='password' placeholder='Enter password' required />
+                            value={password} onChange={(e) => { setPassword(e.target.value); }}
+                            type="password" id="password" name='password' placeholder='At least 8 characters' autoComplete="new-password" minLength="8" required />
                     </div>
 
-                    <button type="submit" className='auth-submit'>Create account</button>
+                    <button type="submit" className='auth-submit' disabled={loading}>{loading ? "Creating account…" : "Create account"}</button>
                 </form>
 
                 <p className="auth-switch">Already have an account? <Link to={"/login"}>Sign in</Link></p>

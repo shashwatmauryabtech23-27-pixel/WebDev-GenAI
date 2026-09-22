@@ -6,7 +6,7 @@ const api = axios.create({
 });
 
 /**
- * @description Pipes requirements to WebDev-GenAI execution block & compiles code sandbox.
+ * @description Sends the candidate profile and job description for AI analysis.
  */
 export const generateInterviewReport = async ({ jobDescription, selfDescription, resumeFile }) => {
     const formData = new FormData();
@@ -25,7 +25,7 @@ export const generateInterviewReport = async ({ jobDescription, selfDescription,
 };
 
 /**
- * @description Fetches architecture specifications and module codeblocks by workflow ID.
+ * @description Fetches one interview report by ID.
  */
 export const getInterviewReportById = async (interviewId) => {
     const response = await api.get(`/api/interview/report/${interviewId}`);
@@ -33,7 +33,7 @@ export const getInterviewReportById = async (interviewId) => {
 };
 
 /**
- * @description Pulls recent compilation snapshots for user dashboard view.
+ * @description Fetches the logged-in user's recent interview reports.
  */
 export const getAllInterviewReports = async () => {
     const response = await api.get("/api/interview/");
@@ -41,21 +41,21 @@ export const getAllInterviewReports = async () => {
 };
 
 /**
- * @description Triggers backend bundler, downloads compiled architecture source-code as a .zip file.
+ * @description Generates and downloads the ATS-optimized resume PDF.
  */
 export const generateResumePdf = async (interviewReportId) => {
     const response = await api.post(`/api/interview/resume/pdf/${interviewReportId}`, null, {
         responseType: "blob" 
     });
 
-    // Auto-trigger clean browser down-pipe for the compiled zip build
-    const blob = new Blob([response.data], { type: 'application/zip' });
+    const blob = new Blob([response.data], { type: 'application/pdf' });
     const link = document.createElement('a');
     link.href = window.URL.createObjectURL(blob);
-    link.download = `webdev-genai-build-${interviewReportId}.zip`;
+    link.download = `ats-resume-${interviewReportId}.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    window.URL.revokeObjectURL(link.href);
 
     return response.data;
 };
