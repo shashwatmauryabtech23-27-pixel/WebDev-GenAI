@@ -32,6 +32,17 @@ async function refreshLegacyReport(report) {
     return report
 }
 
+async function refreshLegacyReportSafely(report) {
+    try {
+        return await refreshLegacyReport(report)
+    } catch (error) {
+        // A saved report is still useful when Gemini is temporarily unavailable.
+        // Do not turn a read/reuse request into a complete page failure.
+        console.warn("Legacy report refresh skipped:", error.message)
+        return report
+    }
+}
+
 
 
 /**
@@ -73,7 +84,7 @@ async function generateInterViewReportController(req, res) {
         }
 
         if (existingReport) {
-            await refreshLegacyReport(existingReport)
+            await refreshLegacyReportSafely(existingReport)
             return res.status(200).json({
                 message: "Existing interview report reused for the same resume and job description.",
                 reused: true,
@@ -101,8 +112,17 @@ async function generateInterViewReportController(req, res) {
             interviewReport
         })
     } catch (error) {
-        console.error("Interview report generation failed:", error.message)
-        res.status(500).json({ message: "Unable to generate interview report. Check the Gemini API configuration and try again." })
+        console.error("Interview report generation failed:", error)
+
+        const status = Number(error?.status || error?.code)
+        if (status === 429) {
+            return res.status(429).json({ message: "Gemini request limit reached. Please wait a minute and try again." })
+        }
+        if ([ 500, 502, 503, 504 ].includes(status)) {
+            return res.status(503).json({ message: "Gemini is temporarily unavailable. Please try again shortly." })
+        }
+
+        res.status(500).json({ message: "Unable to generate the interview report. Please verify the Gemini API key and model configuration." })
     }
 
 }
@@ -124,7 +144,7 @@ async function getInterviewReportByIdController(req, res) {
         })
     }
 
-    await refreshLegacyReport(interviewReport)
+    await refreshLegacyReportSafely(interviewReport)
 
     res.status(200).json({
         message: "Interview report fetched successfully.",
