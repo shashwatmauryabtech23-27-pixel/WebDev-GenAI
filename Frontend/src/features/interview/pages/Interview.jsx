@@ -172,7 +172,7 @@ const Interview = () => {
                                 <span className='match-score__value'>{report.matchScore ?? 0}</span>
                                 <span className='match-score__pct'>%</span>
                             </div>
-                            <p className='match-score__sub'>Resume and role compatibility</p>
+                            <p className='match-score__sub'>AI-assisted resume and role estimate</p>
                         </div>
 
                         <div className='sidebar-divider' />
