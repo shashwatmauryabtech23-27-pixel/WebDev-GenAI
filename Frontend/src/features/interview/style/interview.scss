@@ -5,14 +5,16 @@ $severity-high: #ff4d4d;
 $severity-medium: #f5a623;
 $severity-low: #3fb950;
 
-*::-webkit-scrollbar {
-    display: none;
+.interview-shell {
+    width: 100%;
+    min-height: 100vh;
+    background: var(--bg-page);
 }
 
 // ── Page Shell ────────────────────────────────────────────────────────────────
 .interview-page {
     width: 100%;
-    min-height: 100vh;
+    min-height: calc(100vh - 70px);
     background-color: var(--bg-page);
     color: var(--text-primary);
     font-family: $font-stack;
@@ -32,6 +34,8 @@ $severity-low: #3fb950;
     border: 1px solid var(--border-color);
     border-radius: 1rem;
     justify-content: space-between;
+    align-items: stretch;
+    overflow: hidden;
 }
 
 .interview-divider {
@@ -102,9 +106,8 @@ $severity-low: #3fb950;
 .interview-content {
     flex: 1;
     padding: 1.75rem 2rem;
-    overflow-y: auto;
-    min-height: initial;
-    max-height: calc(100vh - 3rem);
+    min-width: 0;
+    min-height: 0;
     padding-bottom: 5rem;
     align-items: flex-start;
 
@@ -334,12 +337,14 @@ $severity-low: #3fb950;
 
 // ── Right Sidebar ─────────────────────────────────────────────────────────────
 .interview-sidebar {
-    width: 240px;
+    width: 300px;
     flex-shrink: 0;
     padding: 1.75rem 1.25rem;
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
 }
 
 .sidebar-divider {
@@ -408,6 +413,26 @@ $severity-low: #3fb950;
     }
 }
 
+.score-breakdown {
+    width: 100%;
+    margin-top: 0.75rem;
+    padding-top: 0.25rem;
+    text-align: left;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+
+    p {
+        margin: 0 0 0.9rem;
+    }
+
+    strong {
+        display: inline-block;
+        margin-bottom: 0.2rem;
+        color: var(--text-primary);
+    }
+}
+
 // Skill Gaps
 .skill-gaps {
     display: flex;
@@ -454,5 +479,34 @@ $severity-low: #3fb950;
         color: $severity-low;
         background-color: rgba(63, 185, 80, 0.1);
         border-color: rgba(63, 185, 80, 0.25);
+    }
+}
+
+@media (max-width: 1000px) {
+    .interview-page {
+        padding: 1rem;
+    }
+
+    .interview-layout {
+        flex-direction: column;
+    }
+
+    .interview-divider {
+        width: 100%;
+        height: 1px;
+    }
+
+    .interview-nav,
+    .interview-sidebar {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .interview-nav {
+        gap: 1rem;
+    }
+
+    .interview-content {
+        padding: 1.5rem;
     }
 }
