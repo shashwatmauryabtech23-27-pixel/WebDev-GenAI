@@ -17,14 +17,17 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash"
  */
 function calibrateMatchScore(matchScore, skillGaps = []) {
     const originalScore = Math.max(0, Math.min(100, Math.round(Number(matchScore) || 0)))
-    const severityPenalty = skillGaps.reduce((total, gap) => {
-        if (gap?.severity === "high") return total + 20
-        if (gap?.severity === "medium") return total + 8
-        if (gap?.severity === "low") return total + 3
-        return total
-    }, 0)
+    const counts = skillGaps.reduce((result, gap) => {
+        if (gap?.severity && result[gap.severity] !== undefined) result[gap.severity] += 1
+        return result
+    }, { high: 0, medium: 0, low: 0 })
 
-    const evidenceBasedMaximum = Math.max(25, 100 - severityPenalty)
+    // Penalize the first essential gap strongly, then use diminishing penalties
+    // for additional gaps. Unlike the previous formula, this does not force all
+    // reports with several gaps to the same artificial minimum score.
+    const highPenalty = counts.high > 0 ? 20 + ((counts.high - 1) * 7) : 0
+    const severityPenalty = Math.min(60, highPenalty + (counts.medium * 5) + (counts.low * 2))
+    const evidenceBasedMaximum = 100 - severityPenalty
     return Math.min(originalScore, evidenceBasedMaximum)
 }
 
@@ -82,7 +85,9 @@ Scoring rules:
     })
 
     const report = JSON.parse(response.text)
-    report.matchScore = calibrateMatchScore(report.matchScore, report.skillGaps)
+    report.rawMatchScore = Math.max(0, Math.min(100, Math.round(Number(report.matchScore) || 0)))
+    report.matchScore = calibrateMatchScore(report.rawMatchScore, report.skillGaps)
+    report.scoringVersion = 2
     return report
 
 
