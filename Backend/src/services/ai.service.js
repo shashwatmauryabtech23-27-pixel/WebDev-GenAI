@@ -15,25 +15,22 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash"
  * prevents an optimistic model response (for example 80 with a critical gap)
  * from being shown as an ATS-style match score.
  */
-function calibrateMatchScore(matchScore, skillGaps = []) {
-    const originalScore = Math.max(0, Math.min(100, Math.round(Number(matchScore) || 0)))
-    const counts = skillGaps.reduce((result, gap) => {
-        if (gap?.severity && result[gap.severity] !== undefined) result[gap.severity] += 1
-        return result
-    }, { high: 0, medium: 0, low: 0 })
+const SCORE_WEIGHTS = { eligibility: 10, programming: 20, data: 15, coreSkills: 45, domain: 10 }
 
-    // Penalize the first essential gap strongly, then use diminishing penalties
-    // for additional gaps. Unlike the previous formula, this does not force all
-    // reports with several gaps to the same artificial minimum score.
-    const highPenalty = counts.high > 0 ? 20 + ((counts.high - 1) * 7) : 0
-    const severityPenalty = Math.min(60, highPenalty + (counts.medium * 5) + (counts.low * 2))
-    const evidenceBasedMaximum = 100 - severityPenalty
-    return Math.min(originalScore, evidenceBasedMaximum)
+function scoreFromEvidence(breakdown) {
+    return Object.entries(SCORE_WEIGHTS).reduce((total, [key, maximum]) => {
+        const value = Number(breakdown?.[key]?.points)
+        return total + (Number.isFinite(value) ? Math.min(maximum, Math.max(0, Math.round(value))) : 0)
+    }, 0)
 }
 
 
 const interviewReportSchema = z.object({
     matchScore: z.number().describe("A score between 0 and 100 indicating how well the candidate's profile matches the job describe"),
+    scoreBreakdown: z.object(Object.fromEntries(Object.entries(SCORE_WEIGHTS).map(([key, maximum]) => [key, z.object({
+        points: z.number().describe(`Evidence-supported points out of ${maximum}`),
+        evidence: z.string().describe("Specific supporting resume evidence, or a concise explanation of the missing requirement")
+    })]))),
     technicalQuestions: z.array(z.object({
         question: z.string().describe("The technical question can be asked in the interview"),
         intention: z.string().describe("The intention of interviewer behind asking this question"),
@@ -65,7 +62,9 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
                         Job Description: ${jobDescription}
 
 Scoring rules:
-- Treat the match score as a strict job-specific ATS compatibility estimate, not encouragement.
+- Assess the job requirements against the candidate evidence. Return scoreBreakdown with these weights: eligibility 10, programming/problem solving 20, databases/data processing 15, core mandatory role skills 45, related domain skills 10. For another role, map its actual requirements into these categories.
+- Give full points only for clear, specific evidence; partial points for transferable or incomplete evidence; zero for absent essential skills. For example, a CSE graduate with strong Java projects and coding practice, some MongoDB exposure, but no SAP ABAP or SAP BW evidence should score around 35, not 25 by default.
+- For each category, explain the evidence or the missing requirement. The final score is calculated by the server from these five category points.
 - Give credit only for skills and experience explicitly supported by the resume or self description.
 - Do not infer MDM, enterprise consulting, business analysis, QA/testing, SLA, RCA, stakeholder management, or other job requirements when they are not stated.
 - Essential missing requirements must appear in skillGaps. Return 4 to 8 concise, non-duplicate gaps when applicable.
@@ -86,8 +85,8 @@ Scoring rules:
 
     const report = JSON.parse(response.text)
     report.rawMatchScore = Math.max(0, Math.min(100, Math.round(Number(report.matchScore) || 0)))
-    report.matchScore = calibrateMatchScore(report.rawMatchScore, report.skillGaps)
-    report.scoringVersion = 2
+    report.matchScore = scoreFromEvidence(report.scoreBreakdown)
+    report.scoringVersion = 3
     return report
 
 
@@ -151,4 +150,4 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }) {
 
 }
 
-module.exports = { generateInterviewReport, generateResumePdf, calibrateMatchScore }
+module.exports = { generateInterviewReport, generateResumePdf, scoreFromEvidence }

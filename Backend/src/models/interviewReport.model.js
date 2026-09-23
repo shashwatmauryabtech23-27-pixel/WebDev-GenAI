@@ -84,6 +84,9 @@ const interviewReportSchema = new mongoose.Schema({
         min: 0,
         max: 100,
     },
+    scoreBreakdown: {
+        type: mongoose.Schema.Types.Mixed,
+    },
     rawMatchScore: {
         type: Number,
         min: 0,
@@ -92,7 +95,7 @@ const interviewReportSchema = new mongoose.Schema({
     },
     scoringVersion: {
         type: Number,
-        default: 2,
+        default: 3,
         select: false,
     },
     technicalQuestions: [ technicalQuestionSchema ],

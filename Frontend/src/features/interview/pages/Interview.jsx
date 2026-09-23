@@ -173,6 +173,22 @@ const Interview = () => {
                                 <span className='match-score__pct'>%</span>
                             </div>
                             <p className='match-score__sub'>AI-assisted resume and role estimate</p>
+                            {report.scoreBreakdown && (
+                                <div style={{ textAlign: 'left', marginTop: '1rem', fontSize: '.85rem' }}>
+                                    {[
+                                        ['eligibility', 'Eligibility', 10],
+                                        ['programming', 'Programming', 20],
+                                        ['data', 'Data and databases', 15],
+                                        ['coreSkills', 'Core role skills', 45],
+                                        ['domain', 'Domain experience', 10]
+                                    ].map(([key, label, maximum]) => (
+                                        <p key={key} style={{ margin: '.55rem 0' }}>
+                                            <strong>{label}: {Math.min(maximum, Math.max(0, Math.round(Number(report.scoreBreakdown[key]?.points) || 0)))}/{maximum}</strong>
+                                            <br />{report.scoreBreakdown[key]?.evidence}
+                                        </p>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         <div className='sidebar-divider' />

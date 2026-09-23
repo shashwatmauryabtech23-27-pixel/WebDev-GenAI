@@ -1,6 +1,6 @@
 const pdfParse = require("pdf-parse")
 const crypto = require("node:crypto")
-const { generateInterviewReport, generateResumePdf, calibrateMatchScore } = require("../services/ai.service")
+const { generateInterviewReport, generateResumePdf, scoreFromEvidence } = require("../services/ai.service")
 const interviewReportModel = require("../models/interviewReport.model")
 
 function normalizeInput(value = "") {
@@ -18,20 +18,8 @@ function createInputHash({ resume, selfDescription, jobDescription }) {
         .digest("hex")
 }
 
-async function calibrateSavedReport(report) {
-    if (!report) return report
-
-    const calibratedScore = calibrateMatchScore(report.rawMatchScore ?? report.matchScore, report.skillGaps)
-    if (report.matchScore !== calibratedScore) {
-        report.matchScore = calibratedScore
-        await report.save()
-    }
-
-    return report
-}
-
 async function refreshLegacyReport(report) {
-    if (!report || report.scoringVersion === 2) return calibrateSavedReport(report)
+    if (!report || (report.scoringVersion === 3 && report.scoreBreakdown)) return report
 
     const refreshedReport = await generateInterviewReport({
         resume: report.resume || "",
@@ -167,10 +155,12 @@ async function getAllInterviewReportsController(req, res) {
         if (seenInputs.has(fingerprint)) continue
         seenInputs.add(fingerprint)
 
-        const calibratedScore = calibrateMatchScore(report.matchScore, report.skillGaps)
-        if (report.matchScore !== calibratedScore) {
-            report.matchScore = calibratedScore
-            await report.save()
+        if (report.scoringVersion === 3 && report.scoreBreakdown) {
+            const score = scoreFromEvidence(report.scoreBreakdown)
+            if (report.matchScore !== score) {
+                report.matchScore = score
+                await report.save()
+            }
         }
 
         const safeReport = report.toObject()
