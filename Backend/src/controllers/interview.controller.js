@@ -21,12 +21,26 @@ function createInputHash({ resume, selfDescription, jobDescription }) {
 async function calibrateSavedReport(report) {
     if (!report) return report
 
-    const calibratedScore = calibrateMatchScore(report.matchScore, report.skillGaps)
+    const calibratedScore = calibrateMatchScore(report.rawMatchScore ?? report.matchScore, report.skillGaps)
     if (report.matchScore !== calibratedScore) {
         report.matchScore = calibratedScore
         await report.save()
     }
 
+    return report
+}
+
+async function refreshLegacyReport(report) {
+    if (!report || report.scoringVersion === 2) return calibrateSavedReport(report)
+
+    const refreshedReport = await generateInterviewReport({
+        resume: report.resume || "",
+        selfDescription: report.selfDescription || "",
+        jobDescription: report.jobDescription
+    })
+
+    report.set(refreshedReport)
+    await report.save()
     return report
 }
 
@@ -53,6 +67,7 @@ async function generateInterViewReportController(req, res) {
 
         const inputHash = createInputHash({ resume: resumeText, selfDescription, jobDescription })
         let existingReport = await interviewReportModel.findOne({ user: req.user.id, inputHash })
+            .select("+rawMatchScore +scoringVersion")
 
         // Reuse matching reports created before inputHash was introduced.
         if (!existingReport) {
@@ -61,7 +76,7 @@ async function generateInterViewReportController(req, res) {
                 resume: resumeText,
                 selfDescription,
                 jobDescription
-            }).sort({ createdAt: -1 })
+            }).sort({ createdAt: -1 }).select("+rawMatchScore +scoringVersion")
 
             if (existingReport && !existingReport.inputHash) {
                 existingReport.inputHash = inputHash
@@ -70,7 +85,7 @@ async function generateInterViewReportController(req, res) {
         }
 
         if (existingReport) {
-            await calibrateSavedReport(existingReport)
+            await refreshLegacyReport(existingReport)
             return res.status(200).json({
                 message: "Existing interview report reused for the same resume and job description.",
                 reused: true,
@@ -111,7 +126,9 @@ async function getInterviewReportByIdController(req, res) {
 
     const { interviewId } = req.params
 
-    const interviewReport = await interviewReportModel.findOne({ _id: interviewId, user: req.user.id })
+    const interviewReport = await interviewReportModel
+        .findOne({ _id: interviewId, user: req.user.id })
+        .select("+rawMatchScore +scoringVersion")
 
     if (!interviewReport) {
         return res.status(404).json({
@@ -119,7 +136,7 @@ async function getInterviewReportByIdController(req, res) {
         })
     }
 
-    await calibrateSavedReport(interviewReport)
+    await refreshLegacyReport(interviewReport)
 
     res.status(200).json({
         message: "Interview report fetched successfully.",
