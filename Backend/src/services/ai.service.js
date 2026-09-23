@@ -8,6 +8,46 @@ const ai = new GoogleGenAI({
 })
 
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash"
+const MAX_AI_ATTEMPTS = 3
+
+function wait(milliseconds) {
+    return new Promise(resolve => setTimeout(resolve, milliseconds))
+}
+
+function isRetryableAiError(error) {
+    const status = Number(error?.status || error?.code)
+    const message = String(error?.message || "").toLowerCase()
+    return [ 408, 429, 500, 502, 503, 504 ].includes(status)
+        || message.includes("rate limit")
+        || message.includes("overloaded")
+        || message.includes("temporarily unavailable")
+        || message.includes("fetch failed")
+}
+
+async function generateContentWithRetry(request) {
+    let lastError
+
+    for (let attempt = 1; attempt <= MAX_AI_ATTEMPTS; attempt += 1) {
+        try {
+            return await ai.models.generateContent(request)
+        } catch (error) {
+            lastError = error
+            if (!isRetryableAiError(error) || attempt === MAX_AI_ATTEMPTS) throw error
+            await wait(attempt * 750)
+        }
+    }
+
+    throw lastError
+}
+
+function parseJsonResponse(text) {
+    const cleanedText = String(text || "")
+        .trim()
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/, "")
+
+    return JSON.parse(cleanedText)
+}
 
 /**
  * Gemini creates the qualitative report, but the API owns the final score.
@@ -72,7 +112,7 @@ Scoring rules:
 - Keep questions, gaps, preparation plan, and score mutually consistent.
 `
 
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry({
         model: GEMINI_MODEL,
         contents: prompt,
         config: {
@@ -83,7 +123,7 @@ Scoring rules:
         }
     })
 
-    const report = JSON.parse(response.text)
+    const report = interviewReportSchema.parse(parseJsonResponse(response.text))
     report.rawMatchScore = Math.max(0, Math.min(100, Math.round(Number(report.matchScore) || 0)))
     report.matchScore = scoreFromEvidence(report.scoreBreakdown)
     report.scoringVersion = 3
@@ -132,7 +172,7 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }) {
                         The resume should not be so lengthy, it should ideally be 1-2 pages long when converted to PDF. Focus on quality rather than quantity and make sure to include all the relevant information that can increase the candidate's chances of getting an interview call for the given job description.
                     `
 
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry({
         model: GEMINI_MODEL,
         contents: prompt,
         config: {
@@ -142,7 +182,7 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }) {
     })
 
 
-    const jsonContent = JSON.parse(response.text)
+    const jsonContent = resumePdfSchema.parse(parseJsonResponse(response.text))
 
     const pdfBuffer = await generatePdfFromHtml(jsonContent.html)
 
