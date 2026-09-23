@@ -85,12 +85,12 @@ const Interview = () => {
     const skillGaps = report.skillGaps || [];
 
     return (
-        <div className="main-app-container" style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden', background: '#0b0e14' }}>
+        <div className="main-app-container interview-shell">
             
             <Navbar />
 
-            <div className='interview-page' style={{ flexGrow: 1, height: 'calc(100vh - 70px)', overflow: 'hidden' }}>
-                <div className='interview-layout' style={{ height: '100%' }}>
+            <div className='interview-page'>
+                <div className='interview-layout'>
 
                     {/* Left Workspace Navigation */}
                     <nav className='interview-nav'>
@@ -118,7 +118,7 @@ const Interview = () => {
                     <div className='interview-divider' />
 
                     {/* Center Code / Blueprint View */}
-                    <main className='interview-content' style={{ overflowY: 'auto', height: '100%' }}>
+                    <main className='interview-content'>
                         {activeNav === 'technical' && (
                             <section style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                                 <div className='content-header'>
@@ -165,7 +165,7 @@ const Interview = () => {
                     <div className='interview-divider' />
 
                     {/* Right System Architecture Sidebar */}
-                    <aside className='interview-sidebar' style={{ height: '100%', overflowY: 'auto' }}>
+                    <aside className='interview-sidebar'>
                         <div className='match-score'>
                             <p className='match-score__label'>Job Match Score</p>
                             <div className={`match-score__ring ${scoreColor}`}>
@@ -174,7 +174,7 @@ const Interview = () => {
                             </div>
                             <p className='match-score__sub'>AI-assisted resume and role estimate</p>
                             {report.scoreBreakdown && (
-                                <div style={{ textAlign: 'left', marginTop: '1rem', fontSize: '.85rem' }}>
+                                <div className='score-breakdown'>
                                     {[
                                         ['eligibility', 'Eligibility', 10],
                                         ['programming', 'Programming', 20],
