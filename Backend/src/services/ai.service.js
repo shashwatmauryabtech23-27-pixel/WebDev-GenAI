@@ -9,6 +9,25 @@ const ai = new GoogleGenAI({
 
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash"
 
+/**
+ * Gemini creates the qualitative report, but the API owns the final score.
+ * This makes the score internally consistent with the reported skill gaps and
+ * prevents an optimistic model response (for example 80 with a critical gap)
+ * from being shown as an ATS-style match score.
+ */
+function calibrateMatchScore(matchScore, skillGaps = []) {
+    const originalScore = Math.max(0, Math.min(100, Math.round(Number(matchScore) || 0)))
+    const severityPenalty = skillGaps.reduce((total, gap) => {
+        if (gap?.severity === "high") return total + 20
+        if (gap?.severity === "medium") return total + 8
+        if (gap?.severity === "low") return total + 3
+        return total
+    }, 0)
+
+    const evidenceBasedMaximum = Math.max(25, 100 - severityPenalty)
+    return Math.min(originalScore, evidenceBasedMaximum)
+}
+
 
 const interviewReportSchema = z.object({
     matchScore: z.number().describe("A score between 0 and 100 indicating how well the candidate's profile matches the job describe"),
@@ -37,10 +56,18 @@ const interviewReportSchema = z.object({
 async function generateInterviewReport({ resume, selfDescription, jobDescription }) {
 
 
-    const prompt = `Generate an interview report for a candidate with the following details:
+    const prompt = `Generate an evidence-based interview report for a candidate with the following details:
                         Resume: ${resume}
                         Self Description: ${selfDescription}
                         Job Description: ${jobDescription}
+
+Scoring rules:
+- Treat the match score as a strict job-specific ATS compatibility estimate, not encouragement.
+- Give credit only for skills and experience explicitly supported by the resume or self description.
+- Do not infer MDM, enterprise consulting, business analysis, QA/testing, SLA, RCA, stakeholder management, or other job requirements when they are not stated.
+- Essential missing requirements must appear in skillGaps. Return 4 to 8 concise, non-duplicate gaps when applicable.
+- 80-100 means nearly all essential requirements have direct evidence; 60-79 means several requirements are supported but meaningful gaps remain; below 60 means multiple essential requirements lack evidence.
+- Keep questions, gaps, preparation plan, and score mutually consistent.
 `
 
     const response = await ai.models.generateContent({
@@ -54,7 +81,9 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
         }
     })
 
-    return JSON.parse(response.text)
+    const report = JSON.parse(response.text)
+    report.matchScore = calibrateMatchScore(report.matchScore, report.skillGaps)
+    return report
 
 
 }
@@ -117,4 +146,4 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }) {
 
 }
 
-module.exports = { generateInterviewReport, generateResumePdf }
+module.exports = { generateInterviewReport, generateResumePdf, calibrateMatchScore }
