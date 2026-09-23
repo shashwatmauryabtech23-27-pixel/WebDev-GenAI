@@ -1,6 +1,6 @@
 const pdfParse = require("pdf-parse")
 const crypto = require("node:crypto")
-const { generateInterviewReport, generateResumePdf } = require("../services/ai.service")
+const { generateInterviewReport, generateResumePdf, calibrateMatchScore } = require("../services/ai.service")
 const interviewReportModel = require("../models/interviewReport.model")
 
 function normalizeInput(value = "") {
@@ -16,6 +16,18 @@ function createInputHash({ resume, selfDescription, jobDescription }) {
             jobDescription: normalizeInput(jobDescription)
         }))
         .digest("hex")
+}
+
+async function calibrateSavedReport(report) {
+    if (!report) return report
+
+    const calibratedScore = calibrateMatchScore(report.matchScore, report.skillGaps)
+    if (report.matchScore !== calibratedScore) {
+        report.matchScore = calibratedScore
+        await report.save()
+    }
+
+    return report
 }
 
 
@@ -58,6 +70,7 @@ async function generateInterViewReportController(req, res) {
         }
 
         if (existingReport) {
+            await calibrateSavedReport(existingReport)
             return res.status(200).json({
                 message: "Existing interview report reused for the same resume and job description.",
                 reused: true,
@@ -106,6 +119,8 @@ async function getInterviewReportByIdController(req, res) {
         })
     }
 
+    await calibrateSavedReport(interviewReport)
+
     res.status(200).json({
         message: "Interview report fetched successfully.",
         interviewReport
@@ -120,7 +135,7 @@ async function getAllInterviewReportsController(req, res) {
     const reports = await interviewReportModel
         .find({ user: req.user.id })
         .sort({ createdAt: -1 })
-        .select("-__v -technicalQuestions -behavioralQuestions -skillGaps -preparationPlan")
+        .select("-__v -technicalQuestions -behavioralQuestions -preparationPlan")
 
     const seenInputs = new Set()
     const interviewReports = []
@@ -135,11 +150,18 @@ async function getAllInterviewReportsController(req, res) {
         if (seenInputs.has(fingerprint)) continue
         seenInputs.add(fingerprint)
 
+        const calibratedScore = calibrateMatchScore(report.matchScore, report.skillGaps)
+        if (report.matchScore !== calibratedScore) {
+            report.matchScore = calibratedScore
+            await report.save()
+        }
+
         const safeReport = report.toObject()
         delete safeReport.resume
         delete safeReport.selfDescription
         delete safeReport.jobDescription
         delete safeReport.inputHash
+        delete safeReport.skillGaps
         interviewReports.push(safeReport)
     }
 
